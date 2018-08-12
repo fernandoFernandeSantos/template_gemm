@@ -5,9 +5,10 @@
 
 
 int main(){
-	size_t n = 100;
-	double a[n], b[n], c[n];
-	for(auto i = 0; i < n; i++)
+	size_t n = 32;
+	size_t siz = n * n;
+	double a[siz], b[siz], c[siz];
+	for(auto i = 0; i < siz; i++)
 		a[i] = b[i] = c[i] = 1.0;
 //	(char* trans_a, char* trans_b, size_t rows_a, size_t cols_a,
 //				size_t cols_b, const T alpha, const T* host_ptr_a, int lda,
