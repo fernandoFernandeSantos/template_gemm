@@ -1,14 +1,14 @@
 
-
 #include "GEMM.cuh"
 
-
-
-int main(){
+int main() {
 	size_t n = 2048;
 	size_t siz = n * n;
-	double a[siz], b[siz], c[siz];
-	for(auto i = 0; i < siz; i++)
+	double* a = (double*)calloc(siz, sizeof(double));
+	double* b = (double*)calloc(siz, sizeof(double));
+	double* c = (double*)calloc(siz, sizeof(double));
+
+	for (auto i = 0; i < siz; i++)
 		a[i] = b[i] = 1.0;
 //	(char* trans_a, char* trans_b, size_t rows_a, size_t cols_a,
 //				size_t cols_b, const T alpha, const T* host_ptr_a, int lda,
@@ -25,6 +25,10 @@ int main(){
 //		}
 //		printf("\n");
 //	}
+
+	free(a);
+	free(b);
+	free(c);
 
 	return 0;
 }
