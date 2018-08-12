@@ -26,6 +26,9 @@ LDFLAGS= -lm -pthread -lstdc++
 COMMON= 
 CFLAGS=-Wall -Wfatal-errors 
 
+
+INCLUDE=-I/usr/local/cuda/include
+
 ifeq ($(DEBUG), 1) 
 OPTS=-O0 -g -G
 endif
@@ -48,11 +51,8 @@ CFLAGS+= -DSAFE_MALLOC
 endif
 
 ifeq ($(LOGS), 1)
-LOGHELPER_INC=-I../../include/
-LOGHELPER_LIB= -L../../include/ -lLogHelper -DLOGS=1
-HELPFUL=-I../../include/
-else
-HELPFUL=-I../../include/
+INCLUDE+=-I../../include/
+LDFLAGS+= -L../../include/ -lLogHelper -DLOGS=1
 endif
 
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
@@ -64,16 +64,16 @@ RAD_DIR=/home/carol/radiation-benchmarks
 all: obj $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(COMMON) $(CFLAGS) $^ $(LOGHELPER_INC) $(LOGHELPER_LIB) -o $@  $(LDFLAGS)  
+	$(CC) $(COMMON) $(CFLAGS) $^ $(INCLUDE) -o $@  $(LDFLAGS)  
 
 #$(OBJDIR)%.o: %.c $(DEPS)
 #	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@  $(HELPFUL) $(LOGHELPER_LIB) $(LOGHELPER_INC)
 
 $(OBJDIR)%.o: %.cpp $(DEPS)
-	$(CXX) $(COMMON) $(CFLAGS) -c $< -o $@  $(HELPFUL) $(LOGHELPER_LIB) $(LOGHELPER_INC)
+	$(CXX) $(COMMON) $(CFLAGS) -c $< -o $@ $(INCLUDE) 
 
 $(OBJDIR)%.o: %.cu $(DEPS)
-	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@ 
+	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" $(INCLUDE) -c $< -o $@ 
 
 
 obj:
