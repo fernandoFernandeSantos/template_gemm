@@ -13,14 +13,15 @@
 #include <driver_types.h>
 #include <cuda_runtime_api.h>
 #include <stdio.h>
+#include <cooperative_groups.h>
+
+// For half precision computation
+#include <cuda_fp16.h>
+
 
 #ifndef BLOCK_SIZE
 #define BLOCK_SIZE 32
 #endif
-
-// For half precision computation
-//#include "half.hpp"
-#include <cuda_fp16.h>
 
 //KERNELS DEFINITION
 /**
@@ -28,6 +29,10 @@
  */
 //template<>
 __global__ void matrix_mul(half* C, half* A, half* B, size_t w_a, size_t w_b) {
+	// Handle to thread block group
+	cooperative_groups::thread_block cta =
+			cooperative_groups::this_thread_block();
+
 	// Block index
 	int bx = blockIdx.x;
 	int by = blockIdx.y;
@@ -73,7 +78,8 @@ __global__ void matrix_mul(half* C, half* A, half* B, size_t w_a, size_t w_b) {
 		Bs[ty][tx] = __half2half2(B[b + w_b * ty + tx]);
 
 		// Synchronize to make sure the matrices are loaded
-		__syncthreads();
+//		__syncthreads();
+		cooperative_groups::sync(cta);
 
 		// Multiply the two matrices together;
 		// each thread computes one element
@@ -82,8 +88,8 @@ __global__ void matrix_mul(half* C, half* A, half* B, size_t w_a, size_t w_b) {
 
 		for (int k = 0; k < BLOCK_SIZE; ++k) {
 			//__hfma2( __half2half2( d_A0[ty * n + k] ), __half2half2( d_B0[k * (n / 2) + tx] ), acc);
-			__half2 a = __half2half2(((half*)As)[ty * w_a + k]);
-			__half2 b = __half2half2(((half*)Bs)[k * (w_b / 2) + tx]);
+			__half2 a = __half2half2(((half*) As)[ty * w_a + k]);
+			__half2 b = __half2half2(((half*) Bs)[k * (w_b / 2) + tx]);
 			Csub = __hfma2(a, b, Csub);
 //			Csub = __hfma2(__half2half2(As[ty * w_a + k]),
 //					__half2half2(Bs[k * (w_b / 2) + tx]), Csub);
@@ -93,13 +99,15 @@ __global__ void matrix_mul(half* C, half* A, half* B, size_t w_a, size_t w_b) {
 		// Synchronize to make sure that the preceding
 		// computation is done before loading two new
 		// sub-matrices of A and B in the next iteration
-		__syncthreads();
+//		__syncthreads();
+		cooperative_groups::sync(cta);
+
 	}
 
 	// Write the block sub-matrix to device memory;
 	// each thread writes one element
 	int c = w_b * BLOCK_SIZE * by + BLOCK_SIZE * bx;
-	((half2*)C)[c + (w_b / 2) * ty + tx] = Csub;
+	((half2*) C)[c + (w_b / 2) * ty + tx] = Csub;
 }
 
 /**
@@ -107,6 +115,10 @@ __global__ void matrix_mul(half* C, half* A, half* B, size_t w_a, size_t w_b) {
  */
 template<class T>
 __global__ void matrix_mul(T* C, T* A, T* B, size_t w_a, size_t w_b) {
+	// Handle to thread block group
+	cooperative_groups::thread_block cta =
+			cooperative_groups::this_thread_block();
+
 	// Block index
 	int bx = blockIdx.x;
 	int by = blockIdx.y;
@@ -152,7 +164,8 @@ __global__ void matrix_mul(T* C, T* A, T* B, size_t w_a, size_t w_b) {
 		Bs[ty][tx] = B[b + w_b * ty + tx];
 
 		// Synchronize to make sure the matrices are loaded
-		__syncthreads();
+//		__syncthreads();
+		cooperative_groups::sync(cta);
 
 		// Multiply the two matrices together;
 		// each thread computes one element
@@ -166,7 +179,8 @@ __global__ void matrix_mul(T* C, T* A, T* B, size_t w_a, size_t w_b) {
 		// Synchronize to make sure that the preceding
 		// computation is done before loading two new
 		// sub-matrices of A and B in the next iteration
-		__syncthreads();
+		//__syncthreads();
+		cooperative_groups::sync(cta);
 	}
 
 	// Write the block sub-matrix to device memory;
