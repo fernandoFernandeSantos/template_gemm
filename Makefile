@@ -1,0 +1,94 @@
+GPU?=1
+DEBUG?=0
+#for radiation setup
+LOGS?=0
+
+ARCH=  -gencode arch=compute_30,code=[sm_30,compute_30] 
+ARCH+= -gencode arch=compute_35,code=[sm_35,compute_35]
+ARCH+= -gencode arch=compute_50,code=[sm_50,compute_50] 
+ARCH+= -gencode arch=compute_52,code=[sm_52,compute_52] 
+ARCH+= -gencode arch=compute_60,code=[sm_60,compute_60] 
+ARCH+= -gencode arch=compute_62,code=[sm_62,compute_62]
+ARCH+= -gencode arch=compute_70,code=[sm_70,compute_70]
+
+# This is what I use, uncomment if you know your arch and want to specify
+# ARCH=  -gencode arch=compute_52,code=compute_52
+
+VPATH=./src/
+TARGET=gemm
+OBJDIR=./obj/
+
+CC=gcc
+CXX=g++
+NVCC=/usr/local/cuda/bin/nvcc 
+OPTS=-Ofast
+LDFLAGS= -lm -pthread -lstdc++ 
+COMMON= 
+CFLAGS=-Wall -Wfatal-errors 
+
+ifeq ($(DEBUG), 1) 
+OPTS=-O0 -g -G
+endif
+
+CFLAGS+=$(OPTS)
+STDVERSION=-std=c++14
+
+COMMON+= $(STDVERSION)
+
+ifeq ($(GPU), 1) 
+COMMON+= -DGPU -I/usr/local/cuda/include/
+CFLAGS+= -DGPU
+LDFLAGS+= -L/usr/local/cuda/lib64 -lcudart -lcublas -lcurand
+endif
+
+OBJ=main.o
+
+ifeq ($(SAFE_MALLOC), 1)
+CFLAGS+= -DSAFE_MALLOC
+endif
+
+ifeq ($(LOGS), 1)
+LOGHELPER_INC=-I../../include/
+LOGHELPER_LIB= -L../../include/ -lLogHelper -DLOGS=1
+HELPFUL=-I../../include/
+else
+HELPFUL=-I../../include/
+endif
+
+OBJS = $(addprefix $(OBJDIR), $(OBJ))
+DEPS = $(wildcard src/*.h) Makefile
+
+RAD_DIR=/home/carol/radiation-benchmarks
+
+
+all: obj $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(COMMON) $(CFLAGS) $^ $(LOGHELPER_INC) $(LOGHELPER_LIB) -o $@  $(LDFLAGS)  
+
+#$(OBJDIR)%.o: %.c $(DEPS)
+#	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@  $(HELPFUL) $(LOGHELPER_LIB) $(LOGHELPER_INC)
+
+$(OBJDIR)%.o: %.cpp $(DEPS)
+	$(CXX) $(COMMON) $(CFLAGS) -c $< -o $@  $(HELPFUL) $(LOGHELPER_LIB) $(LOGHELPER_INC)
+
+$(OBJDIR)%.o: %.cu $(DEPS)
+	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@ 
+
+
+obj:
+	mkdir -p obj
+
+
+.PHONY: clean
+clean:
+	rm -rf $(OBJS) $(TARGET)
+
+
+
+
+generate:
+	#TODO:
+	
+test:
+	#TODO:
