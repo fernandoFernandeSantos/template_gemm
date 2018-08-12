@@ -166,7 +166,7 @@ __global__ void matrix_mul<half2>(half2* C, half2* A, half2* B, size_t w_a,
 	// Write the block sub-matrix to device memory;
 	// each thread writes one element
 	int c = w_b * BLOCK_SIZE * by + BLOCK_SIZE * bx;
-	C[c + w_b / 2 * ty + tx] = Csub;
+	C[c + (w_b / 2) * ty + tx] = Csub;
 }
 
 namespace radiation {
@@ -222,6 +222,7 @@ public:
 		this->rows_c = this->cols_b;
 
 		if (rows_a > 0 && cols_a > 0 && cols_b > 0) {
+			this->debug("device memory allocation");
 			check_framework_errors(
 					cudaMalloc(reinterpret_cast<void **>(&this->device_ptr_a),
 							this->rows_a * this->cols_a * sizeof(T)));
@@ -232,6 +233,8 @@ public:
 					cudaMalloc(reinterpret_cast<void **>(&this->device_ptr_c),
 							this->rows_c * this->cols_c * sizeof(T)));
 
+
+			this->debug("push memory to device");
 			//set 0 to C matrix
 			this->push_arrays(host_ptr_a, host_ptr_b);
 		} else {
@@ -243,6 +246,8 @@ public:
 	 * Destructor for the GEMM class
 	 */
 	virtual ~GEMM() {
+
+		this->debug("destructor");
 		if (this->device_ptr_a != nullptr)
 			check_framework_errors(cudaFree(this->device_ptr_a));
 
@@ -257,15 +262,21 @@ public:
 	 * PUSH arrays to gpu and set 0x0 to C matrix
 	 */
 	void push_arrays(const T* host_ptr_a, const T* host_ptr_b) {
+
+		this->debug("memset array C");
 		//set 0 to C matrix
 		check_framework_errors(
 				cudaMemset(this->device_ptr_c, 0x00,
 						this->rows_c * this->cols_c * sizeof(T)));
+
+		this->debug("memcpy array A");
 		//PUSH A
 		check_framework_errors(
 				cudaMemcpy(this->device_ptr_a, host_ptr_a,
 						this->rows_a * this->cols_a * sizeof(T),
 						cudaMemcpyHostToDevice));
+
+		this->debug("memcpy array B");
 		//PUSH B
 		check_framework_errors(
 				cudaMemcpy(this->device_ptr_b, host_ptr_b,
@@ -278,10 +289,13 @@ public:
 	 */
 
 	void pull_array(T* host_ptr_c) {
+
+		this->debug("memcpy array C to host");
 		// PULL C
 		check_framework_errors(
 				cudaMemcpy(host_ptr_c, this->device_ptr_c,
-						this->rows_c * this->cols_c * sizeof(T), cudaMemcpyDeviceToHost));
+						this->rows_c * this->cols_c * sizeof(T),
+						cudaMemcpyDeviceToHost));
 	}
 
 	/**
@@ -289,16 +303,28 @@ public:
 	 */
 	void mul() {
 
+		this->debug("thread dim allocation");
 		// Setup execution parameters
 		dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
 		dim3 grid(this->cols_b / threads.x, this->rows_a / threads.y);
 
+
+		this->debug("matrix multiplication");
 		matrix_mul<T, BLOCK_SIZE> <<<grid, threads>>>(this->device_ptr_c,
 				this->device_ptr_a, this->device_ptr_b, this->cols_a,
 				this->cols_b);
 
+
+		this->debug("device synchronize");
 		check_framework_errors(cudaDeviceSynchronize());
 
+	}
+
+private:
+	void debug(const char* message) {
+#ifdef DEBUG
+		printf("DEBUG: %s\n", message);
+#endif
 	}
 
 };

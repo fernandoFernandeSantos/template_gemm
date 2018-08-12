@@ -30,7 +30,8 @@ CFLAGS=-Wall -Wfatal-errors
 INCLUDE=-I/usr/local/cuda/include
 
 ifeq ($(DEBUG), 1) 
-OPTS=-O0 -g -G
+OPTS=-O0 -g -DDEBUG
+NVCCFLAGS=-G -DDEBUG
 endif
 
 CFLAGS+=$(OPTS)
@@ -73,7 +74,7 @@ $(OBJDIR)%.o: %.cpp $(DEPS)
 	$(CXX) $(COMMON) $(CFLAGS) -c $< -o $@ $(INCLUDE) 
 
 $(OBJDIR)%.o: %.cu $(DEPS)
-	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" $(INCLUDE) -c $< -o $@ 
+	$(NVCC) $(ARCH) $(COMMON) $(NVCCFLAGS) --compiler-options "$(CFLAGS)" $(INCLUDE) -c $< -o $@ 
 
 
 obj:
