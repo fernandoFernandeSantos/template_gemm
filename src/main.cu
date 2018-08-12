@@ -5,7 +5,7 @@
 
 
 int main(){
-	size_t n = 32;
+	size_t n = 2048;
 	size_t siz = n * n;
 	double a[siz], b[siz], c[siz];
 	for(auto i = 0; i < siz; i++)
@@ -19,12 +19,12 @@ int main(){
 	test.mul();
 	test.pull_array(c);
 
-	for(auto i = 0; i < n; i++){
-		for(auto j = 0; j < n; j++){
-			printf("%lf ", c[i * n + j]);
-		}
-		printf("\n");
-	}
+//	for(auto i = 0; i < n; i++){
+//		for(auto j = 0; j < n; j++){
+//			printf("%lf ", c[i * n + j]);
+//		}
+//		printf("\n");
+//	}
 
 	return 0;
 }

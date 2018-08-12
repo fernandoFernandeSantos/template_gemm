@@ -166,7 +166,7 @@ __global__ void matrix_mul<half2>(half2* C, half2* A, half2* B, size_t w_a,
 	// Write the block sub-matrix to device memory;
 	// each thread writes one element
 	int c = w_b * BLOCK_SIZE * by + BLOCK_SIZE * bx;
-	C[c + w_b * ty + tx] = Csub;
+	C[c + w_b / 2 * ty + tx] = Csub;
 }
 
 namespace radiation {
