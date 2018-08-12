@@ -29,7 +29,7 @@ template<class T> void matrix_mul(size_t siz, size_t n) {
 }
 
 int main(int argc, char** argv) {
-	if (argc > 2) {
+	if (argc == 2) {
 		size_t n = atoi(argv[1]);
 		size_t siz = n * n;
 
