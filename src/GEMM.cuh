@@ -274,6 +274,17 @@ public:
 	}
 
 	/**
+	 * PULL C array to host
+	 */
+
+	void pull_array(T* host_ptr_c) {
+		// PULL C
+		check_framework_errors(
+				cudaMemcpy(host_ptr_c, this->device_ptr_c,
+						this->rows_c * this->cols_c * sizeof(T), cudaMemcpyDeviceToHost));
+	}
+
+	/**
 	 * Template multiplication
 	 */
 	void mul() {
