@@ -1,6 +1,8 @@
 
 #include "GEMM.cuh"
 #include <iostream>
+#include <cuda_fp16.h>
+
 
 template<class T> void print(T* c, size_t n){
 		for(size_t i = 0; i < n; i++){
@@ -39,7 +41,7 @@ int main() {
 	matrix_mul<float>(siz, n);
 
 	std::cout << "Multiplying for half" << std::endl;
-//	matrix_mul<half2>(siz, n);
+	matrix_mul<half>(siz, n);
 
 
 	return 0;
