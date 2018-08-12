@@ -1,34 +1,46 @@
 
 #include "GEMM.cuh"
+#include <iostream>
+
+template<class T> void print(T* c, size_t n){
+		for(size_t i = 0; i < n; i++){
+			for(size_t j = 0; j < n; j++){
+				std::cout << c[i * n + j] << " ";
+			}
+			std::cout << std::endl;
+		}
+}
+
+template<class T> void matrix_mul(size_t siz, size_t n) {
+	T* a = (T*) (calloc(siz, sizeof(T)));
+	T* b = (T*) (calloc(siz, sizeof(T)));
+	T* c = (T*) (calloc(siz, sizeof(T)));
+
+	for (size_t i = 0; i < siz; i++)
+		a[i] = b[i] = 1.0;
+
+	radiation::GEMM<T> test(a, b, c, n, n, n);
+	test.mul();
+	test.pull_array(c);
+	//print(c);
+	free(a);
+	free(b);
+	free(c);
+}
 
 int main() {
 	size_t n = 2048;
 	size_t siz = n * n;
-	double* a = (double*)calloc(siz, sizeof(double));
-	double* b = (double*)calloc(siz, sizeof(double));
-	double* c = (double*)calloc(siz, sizeof(double));
 
-	for (auto i = 0; i < siz; i++)
-		a[i] = b[i] = 1.0;
-//	(char* trans_a, char* trans_b, size_t rows_a, size_t cols_a,
-//				size_t cols_b, const T alpha, const T* host_ptr_a, int lda,
-//				const T* host_ptr_b, int ldb, const T beta, const T* host_ptr_c,
-//				int ldc, size_t block_size = 32)
+	std::cout << "Multiplying for double" << std::endl;
+	matrix_mul<double>(siz, n);
 
-	radiation::GEMM<double> test(a, b, c, n, n, n);
-	test.mul();
-	test.pull_array(c);
+	std::cout << "Multiplying for float" << std::endl;
+	matrix_mul<float>(siz, n);
 
-//	for(auto i = 0; i < n; i++){
-//		for(auto j = 0; j < n; j++){
-//			printf("%lf ", c[i * n + j]);
-//		}
-//		printf("\n");
-//	}
+	std::cout << "Multiplying for half" << std::endl;
+//	matrix_mul<half2>(siz, n);
 
-	free(a);
-	free(b);
-	free(c);
 
 	return 0;
 }

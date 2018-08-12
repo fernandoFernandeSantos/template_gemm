@@ -323,7 +323,7 @@ public:
 private:
 	void debug(const char* message) {
 #ifdef DEBUG
-		printf("DEBUG: %s\n", message);
+		std::cout << "DEBUG: " << message << std::endl;
 #endif
 	}
 
