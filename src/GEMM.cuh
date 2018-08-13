@@ -18,7 +18,6 @@
 // For half precision computation
 #include <cuda_fp16.h>
 
-
 #ifndef BLOCK_SIZE
 #define BLOCK_SIZE 32
 #endif
@@ -28,7 +27,7 @@
  * matrix_mul for half2
  */
 //template<>
-__global__ void matrix_mul(half* C, half* A, half* B, size_t w_a, size_t w_b) {
+__global__ void matrix_mul(half* A, half* B, half* C, size_t w_a, size_t w_b) {
 	// Handle to thread block group
 	cooperative_groups::thread_block cta =
 			cooperative_groups::this_thread_block();
@@ -114,7 +113,7 @@ __global__ void matrix_mul(half* C, half* A, half* B, size_t w_a, size_t w_b) {
  * matrix_mul for Double and Single
  */
 template<class T>
-__global__ void matrix_mul(T* C, T* A, T* B, size_t w_a, size_t w_b) {
+__global__ void matrix_mul(T* A, T* B, T* C, size_t w_a, size_t w_b) {
 	// Handle to thread block group
 	cooperative_groups::thread_block cta =
 			cooperative_groups::this_thread_block();
@@ -225,6 +224,8 @@ public:
 	size_t cols_b, rows_b;
 	size_t cols_c, rows_c;
 
+	size_t byte_size_c;
+
 	/**
 	 * Class constructor
 	 */
@@ -249,6 +250,9 @@ public:
 			check_framework_errors(
 					cudaMalloc(reinterpret_cast<void **>(&this->device_ptr_c),
 							this->rows_c * this->cols_c * sizeof(T)));
+
+			//to pull C array directly
+			this->byte_size_c = this->rows_c * this->cols_c * sizeof(T);
 
 			this->debug("push memory to device");
 			//set 0 to C matrix
@@ -309,8 +313,7 @@ public:
 		this->debug("memcpy array C to host");
 		// PULL C
 		check_framework_errors(
-				cudaMemcpy(host_ptr_c, this->device_ptr_c,
-						this->rows_c * this->cols_c * sizeof(T),
+				cudaMemcpy(host_ptr_c, this->device_ptr_c, this->byte_size_c,
 						cudaMemcpyDeviceToHost));
 	}
 
@@ -325,8 +328,8 @@ public:
 		dim3 grid(this->cols_b / threads.x, this->rows_a / threads.y);
 
 		this->debug("matrix multiplication");
-		matrix_mul<T> <<<grid, threads>>>(this->device_ptr_c,
-				this->device_ptr_a, this->device_ptr_b, this->cols_a,
+		matrix_mul<T> <<<grid, threads>>>(this->device_ptr_a,
+				this->device_ptr_b, this->device_ptr_c, this->cols_a,
 				this->cols_b);
 
 		this->debug("device synchronize");
@@ -334,7 +337,6 @@ public:
 
 	}
 
-private:
 	void debug(const char* message) {
 #ifdef DEBUG
 		std::cout << "DEBUG: " << message << std::endl;
